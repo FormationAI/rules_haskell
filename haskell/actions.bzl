@@ -690,6 +690,11 @@ def _compilation_defaults(ctx):
   if ctx.var["COMPILATION_MODE"] == "opt":
     args.add("-O2")
 
+  hdrs, include_args = cc_headers(ctx)
+  preprocessor_args = ["-optP" + f for f in include_args]
+  args.add(preprocessor_args)
+  haddock_args.add(preprocessor_args, before_each="--optghc")
+
   args.add(ctx.attr.compiler_flags)
   haddock_args.add(ctx.attr.compiler_flags, before_each="--optghc")
 
@@ -810,11 +815,6 @@ def _compilation_defaults(ctx):
         interface_files.append(
           ctx.actions.declare_file(paths.join(interfaces_dir_raw, "Main.dyn_hi"))
         )
-
-  hdrs, include_args = cc_headers(ctx)
-  preprocessor_args = ["-optP" + f for f in include_args]
-  args.add(preprocessor_args)
-  haddock_args.add(preprocessor_args, before_each="--optghc")
 
   for f in set.to_list(source_files):
     args.add(f)

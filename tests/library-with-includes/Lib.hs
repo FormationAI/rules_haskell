@@ -5,4 +5,4 @@ module Lib (x) where
 #include "tests/library-with-includes/b.h"
 
 x :: Int
-x = A + B
+x = A + B + C

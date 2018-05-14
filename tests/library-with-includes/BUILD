@@ -13,11 +13,12 @@ genrule(
 
 cc_library(
     name = "clib",
-    hdrs = [":gen-a", "b.h"],
+    hdrs = [":gen-a", "b.h", "c.h"],
 )
 
 haskell_library(
     name = "library-with-includes",
     srcs = ["Lib.hs"],
     deps = [":clib"],
+    compiler_flags = ["-optP-include", "-optPtests/library-with-includes/c.h"],
     prebuilt_dependencies = ["base"])

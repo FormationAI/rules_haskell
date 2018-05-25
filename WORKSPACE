@@ -91,14 +91,19 @@ nixpkgs_package(
   repository = "@nixpkgs",
   build_file_content = """
 package(default_visibility = ["//visibility:public"])
-
-filegroup (
-  name = "lib",
-  srcs = glob([
+print([glob([
     "lib/*.so",
     "lib/*.so.*",
     "lib/*.dylib",
-  ]),
+  ])[0]])
+
+filegroup (
+  name = "lib",
+  srcs = [glob([
+    "lib/*.so",
+    "lib/*.so.*",
+    "lib/*.dylib",
+  ])[0]],
   testonly = 1,
 )
 """,

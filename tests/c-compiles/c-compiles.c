@@ -1,1 +1,2 @@
-int add_five(int x) { return x + 5; }
+#include "tests/c-compiles/c-dep.h"
+int add_five(int x) { return add_three(x) + 2; }

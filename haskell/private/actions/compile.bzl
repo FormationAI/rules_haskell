@@ -102,6 +102,18 @@ def _process_hsc_file(hs, cc, ghc_defs_dump, hsc_file):
   )
   return hs_out
 
+def _is_shared_library(f):
+  """Check if the given File is a shared library.
+
+  Args:
+    f: The File to check.
+
+  Returns:
+    Bool: True if the given file `f` is a shared library, False otherwise.
+  """
+  return f.extension in ["so", "dylib"] or f.basename.find(".so.") != -1
+
+
 def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_flags, main_file = None, my_pkg_id = None):
   """Declare default compilation targets and create default compiler arguments.
 
@@ -264,7 +276,7 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.interface_files),
       set.to_depset(dep_info.dynamic_libraries),
-      depset(dep_info.external_libraries.values()),
+      dep_info.external_libraries,
       java.inputs,
       depset([hs.tools.gcc]),
     ]),
@@ -279,7 +291,8 @@ def _compilation_defaults(hs, cc, java, dep_info, srcs, cpp_defines, compiler_fl
     header_files = set.from_list(cc.hdrs + header_files),
     import_dirs = import_dirs,
     env = dicts.add({
-      "LD_LIBRARY_PATH": get_external_libs_path(set.from_list(dep_info.external_libraries.values())),
+      "LD_LIBRARY_PATH": get_external_libs_path([f for f in dep_info.external_libraries
+                                                 if _is_shared_library(f)])
       },
       java.env,
     ),

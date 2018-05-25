@@ -7,8 +7,15 @@ load(
 )
 
 cc_library(
+    name = "c-dep",
+    hdrs = ["c-dep.h"],
+    srcs = ["c-dep.c"],
+)
+
+cc_library(
   name = "c-lib",
   srcs = ["c-compiles.c"],
+  deps = [":c-dep"],
   visibility = ["//visibility:public"],
 )
 

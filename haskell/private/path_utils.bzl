@@ -116,7 +116,7 @@ def get_external_libs_path(libs):
   Returns:
     String: paths to the given libs separated by \":\".
   """
-  return ":".join(set.to_list(set.map(libs, _get_external_lib_path)))
+  return ":".join([_get_external_lib_path(f) for f in libs])
 
 def _get_external_lib_path(lib):
   return paths.dirname(lib.path)

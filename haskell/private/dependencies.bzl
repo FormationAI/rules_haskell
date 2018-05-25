@@ -2,7 +2,6 @@ load(":private/providers.bzl",
   "HaskellBuildInfo",
   "HaskellBinaryInfo",
   "HaskellLibraryInfo",
-  "CcSkylarkApiProviderHacked",
 )
 load(":private/set.bzl", "set")
 load(":private/tools.bzl", "tools")
@@ -99,6 +98,7 @@ def gather_dep_info(ctx):
     HaskellBuildInfo: Unified information about all dependencies.
   """
 
+  # TODO: depsets??
   acc = HaskellBuildInfo(
     package_ids = set.empty(),
     package_confs = set.empty(),
@@ -107,7 +107,7 @@ def gather_dep_info(ctx):
     dynamic_libraries = set.empty(),
     interface_files = set.empty(),
     prebuilt_dependencies = set.from_list(ctx.attr.prebuilt_dependencies),
-    external_libraries = {},
+    external_libraries = depset(),
   )
 
   for dep in ctx.attr.deps:
@@ -126,9 +126,10 @@ def gather_dep_info(ctx):
         dynamic_libraries = set.mutable_union(acc.dynamic_libraries, binfo.dynamic_libraries),
         interface_files = set.mutable_union(acc.interface_files, binfo.interface_files),
         prebuilt_dependencies = set.mutable_union(acc.prebuilt_dependencies, binfo.prebuilt_dependencies),
-        external_libraries = dicts.add(acc.external_libraries, binfo.external_libraries)
+        external_libraries = depset(transitive=[binfo.external_libraries,
+                                                acc.external_libraries])
       )
-    else:
+    elif hasattr(dep, "cc"):
       # If not a Haskell dependency, pass it through as-is to the
       # linking phase.
       acc = HaskellBuildInfo(
@@ -139,15 +140,8 @@ def gather_dep_info(ctx):
         dynamic_libraries = acc.dynamic_libraries,
         interface_files = acc.interface_files,
         prebuilt_dependencies = acc.prebuilt_dependencies,
-        external_libraries = dicts.add(
-          acc.external_libraries,
-          {f:
-            # If the provider is CcSkylarkApiProviderHacked, then the .so
-            # files come from haskell_cc_import.
-            _mangle_solib(ctx, dep.label, f, CcSkylarkApiProviderHacked in dep)
-            for f in dep.files.to_list() if _is_shared_library(f)}
-
-          ),
+        external_libraries =
+            depset(transitive=[dep.cc.libs, acc.external_libraries]),
       )
 
   return acc

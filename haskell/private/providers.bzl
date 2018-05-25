@@ -76,21 +76,3 @@ HaskellProtobufInfo = provider(
     "files": "files",
   }
 )
-
-# XXX this provider shouldn't be necessary. But since Skylark rules
-# can neither return CcSkylarkApiProvider nor properly test for its
-# existence in a dependency, we're forced to introduce this hack for
-# now. See https://github.com/bazelbuild/bazel/issues/4370.
-CcSkylarkApiProviderHacked = provider(
-  doc = "Skylark emulation of CcSkylarkApiProvider. Temporary hack.",
-  fields = {
-    "transitive_headers": """
-
-Returns a depset of headers that have been declared in the src or
-headers attribute(possibly empty but never None).
-""",
-    "include_directories": """
-Returns the list of include directories used to compile this target.
-""",
-  },
-)

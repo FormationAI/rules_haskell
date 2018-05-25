@@ -5,7 +5,6 @@ load(":private/providers.bzl",
   "HaskellLibraryInfo",
   "HaskellBinaryInfo",
   "HaskellProtobufInfo",
-  "CcSkylarkApiProviderHacked",
 )
 
 load(":private/set.bzl", "set")

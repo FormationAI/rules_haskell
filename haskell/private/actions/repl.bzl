@@ -76,7 +76,7 @@ def build_haskell_repl(
 
   # External libraries.
   seen_libs = set.empty()
-  for lib in build_info.external_libraries.values():
+  for lib in build_info.external_libraries:
     lib_name = get_lib_name(lib)
     if not set.is_member(seen_libs, lib_name):
       set.mutable_insert(seen_libs, lib_name)
@@ -132,10 +132,8 @@ def build_haskell_repl(
       # necessary for dynamic Haskell libraries to see other dynamic Haskell
       # libraries they are linked with.
       "{LDLIBPATH}": get_external_libs_path(
-        set.union(
-          build_info.dynamic_libraries,
-          set.from_list(build_info.external_libraries.values()),
-        )
+          set.to_list(build_info.dynamic_libraries) +
+          build_info.external_libraries.to_list()
       ),
       "{GHCi}": hs.tools.ghci.path,
       "{SCRIPT_LOCATION}": output.path,

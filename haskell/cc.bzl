@@ -7,7 +7,6 @@ load(":private/providers.bzl",
      "HaskellBuildInfo",
      "HaskellLibraryInfo",
      "HaskellBinaryInfo",
-     "CcSkylarkApiProviderHacked",
 )
 
 load(":private/set.bzl", "set")
@@ -36,17 +35,8 @@ def cc_headers(ctx):
 
   hdrs = depset(transitive = [cc.transitive_headers for cc in ccs])
 
-  hdrs = depset(transitive = [hdrs] + [
-    # XXX cc_import doesn't produce a cc field, so we emulate it with a
-    # custom provider.
-    dep[CcSkylarkApiProviderHacked].transitive_headers
-    for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
-  ])
-
   include_directories = set.to_list(set.from_list(
-      [f for cc in ccs for f in cc.include_directories]
-      + [f for dep in ctx.attr.deps if CcSkylarkApiProviderHacked in dep
-         for f in dep[CcSkylarkApiProviderHacked].include_directories]))
+      [f for cc in ccs for f in cc.include_directories]))
   quote_include_directories = set.to_list(set.from_list(
       [f for cc in ccs for f in cc.quote_include_directories]))
   system_include_directories = set.to_list(set.from_list(
@@ -67,104 +57,16 @@ def cc_headers(ctx):
     include_args = include_args,
   )
 
-def _cc_import_impl(ctx):
-  strip_prefix = ctx.attr.strip_include_prefix
-  # cc_library's strip_include_prefix attribute accepts both absolute and
-  # relative paths.  For simplicity we currently only implement absolute
-  # paths.
-  if strip_prefix.startswith("/"):
-    prefix = strip_prefix[1:]
-  else:
-    prefix = paths.join(ctx.label.workspace_root, ctx.label.package, strip_prefix)
-
-  roots = set.empty()
-  for f in ctx.files.hdrs:
-
-    # If it's a generated file, strip off the bin or genfiles prefix.
-    path = f.path
-    if path.startswith(ctx.bin_dir.path):
-      path = paths.relativize(path, ctx.bin_dir.path)
-    elif path.startswith(ctx.genfiles_dir.path):
-      path = paths.relativize(path, ctx.genfiles_dir.path)
-
-    if not path.startswith(prefix):
-      fail("Header {} does not have expected prefix {}".format(
-          path, prefix))
-    roots = set.insert(roots, f.root.path if f.root.path else ".")
-
-  include_directories = [paths.join(root, prefix) for root in set.to_list(roots)]
-  return [
-    DefaultInfo(files = depset(ctx.attr.shared_library.files)),
-    CcSkylarkApiProviderHacked(
-        transitive_headers =
-            depset(transitive = [l.files for l in ctx.attr.hdrs]),
-        include_directories = include_directories),
-  ]
-
-# XXX This is meant as a drop-in replacement for the native cc_import,
-# but it's a temporary hack. It's only necessary because the native
-# cc_import does not provide CcSkylarkApiProvider. So we write our own
-# rule that does just that. See
-# https://github.com/bazelbuild/bazel/issues/4369.
-haskell_cc_import = rule(
-  _cc_import_impl,
-  attrs = {
-    "shared_library": attr.label(
-      # NOTE We do not list all extensions here because .so libraries may
-      # have numeric suffixes like foo.so.1.2.3, and if they also have
-      # SONAME with numeric suffix, matching file must be provided, so this
-      # attributes must accept libraries with almost arbitrary extensions.
-      # It would be easier if Skylark supported regexps.
-      allow_files = True,
-      doc = """A single precompiled shared library.
-
-Bazel ensures it is available to the binary that depends on it
-during runtime.
-""",
-    ),
-    "hdrs": attr.label_list(
-      allow_files = [".h"],
-      doc = """
-
-The list of header files published by this precompiled library to be
-directly included by sources in dependent rules.
-""",
-    ),
-    "strip_include_prefix": attr.string(
-      doc = """
-The prefix to strip from the paths of the headers of this rule.
-When set, the headers in the `hdrs` attribute of this rule are
-accessible at their path (relative to the repository) with this
-prefix cut off.
-
-If it's a relative path, it's taken as a package-relative one. If it's an
-absolute one, it's understood as a repository-relative path.
-"""),
-  },
-)
-"""Imports a prebuilt shared library.
-
-Use this to make `.so`, `.dll`, `.dylib` files residing in external
-[external repositories][bazel-ext-repos] available to Haskell rules.
-
-*This rule is temporary replacement for [cc_import][cc_import] and
-will be deprecated in the future.*
-
-Example:
-  ```bzl
-  haskell_cc_import(name = "zlib", shared_library = "@zlib//:lib")
-
-  haskell_binary(
-    name = "crc32sum",
-    srcs = ["Main.hs"],
-    deps = [":zlib"],
-    prebuilt_dependencies = ["base"],
-  )
-  ```
-
-[bazel-ext-repos]: https://docs.bazel.build/versions/master/external.html
-[cc_import]: https://docs.bazel.build/versions/master/be/c-cpp.html#cc_import
-"""
+def haskell_cc_import(name, shared_library, hdrs=[], strip_include_prefix="",testonly=None,visibility=None):
+  native.cc_import(name = name + ".import",
+            shared_library = shared_library,
+            testonly=testonly)
+  native.cc_library(name = name,
+             hdrs = hdrs,
+             strip_include_prefix=strip_include_prefix,
+             deps = [name + ".import"],
+             testonly=testonly,
+             visibility=visibility)
 
 def _cc_haskell_import(ctx):
 

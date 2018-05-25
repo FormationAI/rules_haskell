@@ -43,7 +43,7 @@ def haskell_binary_impl(ctx):
   binary = link_binary(hs, dep_info, ctx.attr.compiler_flags, c.object_dyn_files)
 
   solibs = set.union(
-    set.from_list(dep_info.external_libraries.values()),
+    set.from_list(dep_info.external_libraries.to_list()),
     dep_info.dynamic_libraries,
   )
 

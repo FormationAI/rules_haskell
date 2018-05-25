@@ -5,25 +5,11 @@ load("@io_tweag_rules_haskell//haskell:haskell.bzl",
   "haskell_cc_import",
 )
 
-filegroup (
-  name = "include",
-  srcs = glob(["cbits/*.h"]),
-)
-
-filegroup (
-  name = "lib",
-  srcs = glob([
-    "lib/*.so",
-    "lib/*.so.*",
-    "lib/*.dylib",
-  ]),
-)
-
-haskell_cc_import(
-  name = "zlib-import",
-  shared_library = ":lib",
-  hdrs = [":include"],
-  strip_include_prefix = "cbits",
+cc_library(
+    name = "cbits",
+    srcs = glob(["cbits/*.c"]),
+    hdrs = glob(["cbits/*.h"]),
+    strip_include_prefix = "cbits",
 )
 
 haskell_library(
@@ -33,7 +19,7 @@ haskell_library(
     "Codec/Compression/Zlib/*.hs",
     "Codec/Compression/Zlib/*.hsc",
   ]),
-  deps = ["zlib-import"],
+  deps = [":cbits"],
   prebuilt_dependencies = [
     "base",
     "bytestring",

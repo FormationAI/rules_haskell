@@ -144,7 +144,7 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
   for p in set.to_list(dep_info.prebuilt_dependencies):
     args.add(["-package", p])
 
-  _add_external_libraries(args, dep_info.external_libraries.values())
+  _add_external_libraries(args, dep_info.external_libraries)
 
   solibs = set.union(
     set.from_list(dep_info.external_libraries),
@@ -170,7 +170,7 @@ def link_binary(hs, dep_info, compiler_flags, object_files):
       depset(dep_info.static_libraries),
       depset(object_files),
       depset([dummy_static_lib]),
-      depset(dep_info.external_libraries.values()),
+      dep_info.external_libraries,
     ]),
     outputs = [compile_output],
     progress_message = "Linking {0}".format(hs.name),
@@ -272,7 +272,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
   for cache in set.to_list(dep_info.package_caches):
     args.add(["-package-db", cache.dirname])
 
-  _add_external_libraries(args, dep_info.external_libraries.values())
+  _add_external_libraries(args, dep_info.external_libraries)
 
   args.add([ f.path for f in object_files ])
 
@@ -302,7 +302,7 @@ def link_library_dynamic(hs, dep_info, object_files, my_pkg_id):
       depset(object_files),
       set.to_depset(dep_info.package_caches),
       set.to_depset(dep_info.dynamic_libraries),
-      depset(dep_info.external_libraries.values()),
+      dep_info.external_libraries,
     ]),
     outputs = [dynamic_library_tmp],
     progress_message = "Linking dynamic library {0}".format(dynamic_library.basename),

@@ -1,3 +1,4 @@
+
 # Haskell rules for [Bazel][bazel]
 
 [![CircleCI](https://circleci.com/gh/tweag/rules_haskell.svg?style=svg)](https://circleci.com/gh/tweag/rules_haskell)
